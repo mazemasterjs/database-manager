@@ -1,0 +1,55 @@
+{
+  "name": "database-manager",
+  "version": "1.0.0",
+  "description": "Wrapper for the MongoDB driver for node that provides CRUD operations (and a few extended operations).  Primarily used by MazeMasterJS services. ",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "@mazemasterjs/logger": "^1.0.7",
+    "@mazemasterjs/shared-library": "^1.3.10",
+    "mongodb": "^3.2.3"
+  },
+  "devDependencies": {
+    "@istanbuljs/nyc-config-typescript": "^0.1.3",
+    "@types/chai": "^4.1.7",
+    "@types/dotenv": "^6.1.1",
+    "@types/mocha": "^5.2.6",
+    "@types/mongodb": "^3.1.26",
+    "@types/node": "^12.0.0",
+    "chai": "^4.2.0",
+    "dotenv": "^8.0.0",
+    "mocha": "^6.1.4",
+    "nyc": "^14.1.0",
+    "source-map-support": "^0.5.12",
+    "ts-node": "^8.1.0",
+    "tslint": "^5.16.0",
+    "tslint-config-prettier": "^1.18.0",
+    "typescript": "^3.4.5"
+  },
+  "scripts": {
+    "build": "tsc",
+    "cover": "nyc mocha -r dotenv/config",
+    "lint": "tslint -p tsconfig.json",
+    "scan": "sonar-scanner.bat",
+    "test": "mocha -r dotenv/config",
+    "test-watch": "mocha -r dotenv/config --watch",
+    "test-dbg": "mocha --debug-brk --inspect -r dotenv/config"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mazemasterjs/database-manager.git"
+  },
+  "keywords": [
+    "mmjs",
+    "mazemasterjs",
+    "mongodb"
+  ],
+  "author": "kreebog@gmail.com",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mazemasterjs/database-manager/issues"
+  },
+  "homepage": "https://github.com/mazemasterjs/database-manager#readme"
+}

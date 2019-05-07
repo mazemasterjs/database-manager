@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "module": "commonjs",
+    "watch": false,
+    "removeComments": false,
+    "declaration": true,
+    "declarationDir": "bin/types",
+    "sourceMap": true,
+    "outDir": "bin",
+    "strict": true,
+    "alwaysStrict": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
+}

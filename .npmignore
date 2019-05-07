@@ -1,0 +1,29 @@
+# Runtime data
+*.pid
+*.seed
+*.pid.lock
+
+# ignore test, source, and data
+test/
+src/
+data/
+
+# config / env files
+_.env
+.git
+.env
+.npmrc
+.vscode/
+tsconfig.json
+tslint.json
+.nycrc
+
+# don't upload testing / coverage stuff
+coverage/
+sonar-project.properties
+.scannerwork
+.sonarlint
+.nyc_output
+
+# ignore sample service.json file
+service.json
