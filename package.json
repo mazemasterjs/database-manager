@@ -1,8 +1,8 @@
 {
-  "name": "database-manager",
+  "name": "@mazemasterjs/database-manager",
   "version": "1.0.0",
   "description": "Wrapper for the MongoDB driver for node that provides CRUD operations (and a few extended operations).  Primarily used by MazeMasterJS services. ",
-  "main": "index.js",
+  "main": "",
   "directories": {
     "test": "test"
   },
