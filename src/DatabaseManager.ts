@@ -1,12 +1,12 @@
 import {
   Collection,
-  Cursor,
   Db,
   DeleteWriteOpResultObject,
   InsertOneWriteOpResult,
   MongoClient,
   UpdateWriteOpResult,
 } from 'mongodb';
+
 import { Logger } from '@mazemasterjs/logger';
 
 export class DatabaseManager {
@@ -68,6 +68,15 @@ export class DatabaseManager {
         throw err;
       }
 
+      // special warning for CURSOR_LIMIT
+      if (process.env.MONGO_CURSOR_LIMIT === '') {
+        Logger.getInstance().warn(
+          __filename,
+          'initConnection()',
+          'MONGO_CURSOR_LIMIT was not set, using default value: 10',
+        );
+      }
+
       // looks like we have everything we need
       const instance = new DatabaseManager();
 
@@ -106,6 +115,11 @@ export class DatabaseManager {
   // get/declare static variables
   private static instance: DatabaseManager;
 
+  // most of the env vars are only needed during getInstance -> initConnection, but
+  // this value needs to be a member so it can be used by class functions
+  private static MONGO_CURSOR_LIMIT =
+    process.env.MONGO_CURSOR_LIMIT === '' ? 10 : parseInt(process.env.MONGO_DB + '', 10);
+
   private static mazes: Collection;
   private static scores: Collection;
   // private static games: Collection;
@@ -131,13 +145,56 @@ export class DatabaseManager {
   }
 
   /**
-   * Return all documents in the given collection (danger - not paged!)
+   * Return all documents in the given collection that match the given parameters
    *
    * @param collectionName string
+   * @param pageNumber number - the page
    */
-  public getAllDocuments(collectionName: string): Cursor<any> {
-    this.log.debug(__filename, `getAllDocuments(${collectionName})`, 'Attempting to get all documents in collection.');
-    return this.getCollection(collectionName).find();
+  public async getDocuments(
+    collectionName: string,
+    pageNumber: number,
+    pageSize: number,
+    objParams: any,
+  ): Promise<Array<any>> {
+    this.log.debug(
+      __filename,
+      `getDocuments(${collectionName}, ${pageSize}, ${pageNumber}, ${JSON.stringify(objParams)})`,
+      'Getting documents...',
+    );
+
+    // shift page number back one if >0 - it's more intuitive to start with "page 1"
+    if (pageNumber > 0) {
+      pageNumber--;
+    }
+
+    if (pageSize > DatabaseManager.MONGO_CURSOR_LIMIT) {
+      this.log.warn(
+        __filename,
+        `getDocuments(${collectionName}, ${pageSize}, ${pageNumber}, ${JSON.stringify(objParams)})`,
+        `!! WARNING !! pageSize(${pageSize}) exceed configured MONGO_CURSOR_LIMIT (${
+          DatabaseManager.MONGO_CURSOR_LIMIT
+        }).  ONLY THE FIRST ${DatabaseManager.MONGO_CURSOR_LIMIT} RECORDS WILL BE RETURNED!`,
+      );
+    }
+
+    // grab the cursor (with skip & limit)
+    const cur = this.getCollection(collectionName)
+      .find(objParams)
+      .skip(pageNumber * pageSize)
+      .limit(pageSize);
+
+    // convert to array because looping cursors is annoying
+    // and I don't want to have to load mongodb as a dependency
+    const docs = await cur.toArray();
+
+    return new Promise((resolve, reject) => {
+      /* istanbul ignore else */
+      if (!docs || !cur) {
+        reject(new Error(`Unable to retrieve [ ${collectionName} ] collection.`));
+      } else {
+        resolve(docs);
+      }
+    });
   }
 
   /**

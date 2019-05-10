@@ -1,7 +1,6 @@
 import { DatabaseManager } from '../src/DatabaseManager';
 import { assert, expect } from 'chai';
 import { Maze } from '@mazemasterjs/shared-library/Maze';
-import { Cursor } from 'mongodb';
 
 // test cases
 describe('DatabaseManager Tests', () => {
@@ -19,7 +18,7 @@ describe('DatabaseManager Tests', () => {
         return expect(mongo.isConnected()).to.be.true;
       })
       .then(() => {
-        mazeRaw = new Maze().generate(3, 3, 5, 'DatabaseManager_TestName', 'DatabaseManager_TestSeed');
+        mazeRaw = new Maze().generate(3, 3, 5, 'DBM_TName', 'DBM_TSeed');
       })
       .catch(error => {
         return assert.fail(error);
@@ -41,22 +40,15 @@ describe('DatabaseManager Tests', () => {
     });
   });
 
-  it(`Scores collection count should be 0.`, () => {
+  it(`Scores collection document count should be > 0.`, () => {
     return mongo.countDocuments(MONGO_COL_SCORES).then(result => {
-      expect(result).to.equal(0);
+      expect(result).to.be.greaterThan(0);
     });
   });
 
   it(`Teams collection count should be 0.`, () => {
     return mongo.countDocuments(MONGO_COL_TEAMS).then(result => {
       expect(result).to.equal(0);
-    });
-  });
-
-  it(`getAllDocuments cursor.count should be greater than 0`, () => {
-    const cur: Cursor = mongo.getAllDocuments(MONGO_COL_MAZES);
-    return cur.count(true).then(count => {
-      expect(count).to.be.greaterThan(0);
     });
   });
 
@@ -75,6 +67,33 @@ describe('DatabaseManager Tests', () => {
     });
   });
 
+  it(`getDocuments(MONGO_COL_MAZES, 1, 2, {}) should return two documents`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, 1, 2, {}).then(mazeDocs => {
+      expect(mazeDocs.length).to.equal(2);
+    });
+  });
+
+  it(`getDocuments(...) - different pages should have different documents`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, 1, 2, {}).then(pageOne => {
+      return mongo.getDocuments(MONGO_COL_MAZES, 2, 2, {}).then(pageTwo => {
+        expect(pageOne[0].id).to.not.equal(pageTwo[0].id);
+      });
+    });
+  });
+
+  it(`getDocuments({ width: 3, height: 3}) should more only 3x3 mazes`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, 1, 10, { height: 3, width: 3 }).then(mazeDocs => {
+      let passed = true;
+      for (const maze of mazeDocs) {
+        if (maze.height !== 3 || maze.width !== 3) {
+          passed = false;
+        }
+      }
+
+      return expect(passed).to.be.true;
+    });
+  });
+
   it(`Same maze cannot be inserted twice`, () => {
     // need to create a copy of the maze to insert
     // since mongo tags the object with the generated object _id
@@ -89,7 +108,7 @@ describe('DatabaseManager Tests', () => {
       });
   });
 
-  it(`Maze from database should match maze in memory`, () => {
+  it(`getDocument database should match maze in memory`, () => {
     return mongo.getDocument(MONGO_COL_MAZES, mazeRaw.Id).then(doc => {
       const mazeFromDb: Maze = new Maze(doc);
       expect(JSON.stringify(mazeFromDb)).to.equal(JSON.stringify(mazeRaw));
