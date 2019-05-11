@@ -136,8 +136,12 @@ export class DatabaseManager {
    * @param collectionName string
    */
   public async getDocumentCount(collectionName: string, query?: any): Promise<number> {
-    // ensure optional query parameter is set to empty query
-    query = !query ? {} : query;
+    // apparently, mongodb doesn't like optional parameters as queries
+    // so I have to remap it like this to get the right overload out of .countDocuments(query?: any)
+    let countQuery = {};
+    if (query !== undefined) {
+      countQuery = query;
+    }
 
     // need to expand and log parameters
     /* istanbul ignore if */
@@ -149,8 +153,8 @@ export class DatabaseManager {
       );
     }
 
-    const count = await this.getCollection(collectionName).countDocuments(query);
-    return count === undefined ? 0 : count;
+    // run the query
+    return await this.getCollection(collectionName).countDocuments(countQuery);
   }
 
   /**

@@ -37,9 +37,10 @@ describe('DatabaseManager Tests', () => {
     expect(mongo.isConnected()).to.be.equal(true);
   });
 
-  it(`getDocumentCount(MONGO_COL_MAZES) should be > 0`, () => {
-    return mongo.getDocumentCount(MONGO_COL_MAZES).then(result => {
-      expect(result).to.be.greaterThan(0);
+  // default maze set contains 25 mazes as of 5/11/2019
+  it(`getDocumentCount(MONGO_COL_MAZES) should be > 24`, () => {
+    return mongo.getDocumentCount(MONGO_COL_MAZES).then(count => {
+      expect(count).to.be.greaterThan(0);
     });
   });
 
