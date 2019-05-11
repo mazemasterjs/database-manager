@@ -270,7 +270,7 @@ export class DatabaseManager {
     }
 
     return await this.getCollection(collectionName)
-      .updateOne({ id: query }, { $set: doc }, { upsert: false })
+      .updateOne(query, { $set: doc }, { upsert: false })
       .catch(err => {
         this.log.error(
           __filename,

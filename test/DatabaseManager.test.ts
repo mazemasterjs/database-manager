@@ -135,7 +135,7 @@ describe('DatabaseManager Tests', () => {
 
   it(`updateDocument should return successfully`, () => {
     mazeStored.Note = 'MongDBHandler.test Unit Test Note';
-    return mongo.updateDocument(MONGO_COL_MAZES, mazeStored.Id, mazeStored).then(result => {
+    return mongo.updateDocument(MONGO_COL_MAZES, { id: mazeStored.Id }, mazeStored).then(result => {
       expect(result.modifiedCount).to.equal(1);
     });
   });
