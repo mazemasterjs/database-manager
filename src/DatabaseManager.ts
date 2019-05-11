@@ -146,7 +146,7 @@ export class DatabaseManager {
     // need to expand and log parameters
     /* istanbul ignore if */
     if (this.log.LogLevel > LOG_LEVELS.INFO) {
-      this.log.debug(
+      this.log.trace(
         __filename,
         `getDocumentCount(${collectionName}, ${JSON.stringify(query)})`,
         'Attempting to get document count.',
@@ -177,9 +177,9 @@ export class DatabaseManager {
   ): Promise<Array<any>> {
     let method = `getDocuments(${collectionName}, ${query}, ${pageSize}, ${pageNumber})`;
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
       method = `getDocuments(${collectionName}, ${JSON.stringify(query)}, ${pageSize}, ${pageNumber})`;
-      this.logDebug(method, 'Executing query.');
+      this.logTrace(method, 'Executing query.');
     }
 
     // pageSize cannot exceed cursor limit - warn and set, if needed
@@ -235,9 +235,9 @@ export class DatabaseManager {
     // avoid expensive parameter stringify unless debugging
     let method = `getDocument(${collectionName}, ${query}, ${projection})`;
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
       method = `getDocument(${collectionName}, ${JSON.stringify(query)}, ${JSON.stringify(projection)})`;
-      this.logDebug(method, 'Executing query.');
+      this.logTrace(method, 'Executing query.');
     }
 
     // query for the document
@@ -261,8 +261,8 @@ export class DatabaseManager {
   public async updateDocument(collectionName: string, query: any, doc: any): Promise<UpdateWriteOpResult> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.INFO) {
-      this.log.debug(
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
+      this.log.trace(
         __filename,
         `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
         'Attempting to update document.',
@@ -291,8 +291,8 @@ export class DatabaseManager {
   public async insertDocument(collectionName: string, doc: any): Promise<InsertOneWriteOpResult> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.INFO) {
-      this.log.debug(
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
+      this.log.trace(
         __filename,
         `insertDocument(${collectionName}, ${JSON.stringify(doc)})`,
         'Attempting to insert document.',
@@ -310,8 +310,8 @@ export class DatabaseManager {
   public async deleteDocument(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.INFO) {
-      this.log.debug(
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
+      this.log.trace(
         __filename,
         `deleteDocument(${collectionName}, ${JSON.stringify(query)})`,
         'Attempting to delete document.',
@@ -365,7 +365,7 @@ export class DatabaseManager {
    * @throws Undefined / Not Connected error
    */
   private getCollection(collectionName: string): Collection {
-    this.logDebug(`getCollection(${collectionName})`, 'Getting collection.');
+    this.logTrace(`getCollection(${collectionName})`, 'Getting collection.');
 
     /* istanbul ignore else */
     if (this.mongoClient && this.mongoClient.isConnected()) {
@@ -394,6 +394,19 @@ export class DatabaseManager {
     /* istanbul ignore if */
     if (this.log.LogLevel > LOG_LEVELS.INFO) {
       this.log.debug(__filename, method, message);
+    }
+  }
+
+  /**
+   * Simple log wrapper to improve performance when not trace logging
+   *
+   * @param method string - method & parameters to log
+   * @param message string - message to log
+   */
+  private logTrace(method: string, message: string) {
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
+      this.log.trace(__filename, method, message);
     }
   }
 }
