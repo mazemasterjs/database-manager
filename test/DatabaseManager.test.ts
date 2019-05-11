@@ -7,9 +7,12 @@ describe('DatabaseManager Tests', () => {
   let mongo: DatabaseManager;
   let mazeRaw: Maze;
   let mazeStored: Maze;
+  const prjMazeStub = { _id: 0, cells: 0, textRender: 0 };
   const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
   const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
   const MONGO_COL_SCORES = process.env.MONGO_COL_SCORES + '';
+  const MONGO_CURSOR_LIMIT: number = parseInt(process.env.MONGO_CURSOR_LIMIT + '', 10);
+  const overLimit = MONGO_CURSOR_LIMIT + 5;
 
   before('Mongo Client should connect', () =>
     DatabaseManager.getInstance()
@@ -34,20 +37,26 @@ describe('DatabaseManager Tests', () => {
     expect(mongo.isConnected()).to.be.equal(true);
   });
 
-  it(`Mazes collection count should be greater than 0`, () => {
-    return mongo.countDocuments(MONGO_COL_MAZES).then(result => {
+  it(`getDocumentCount(MONGO_COL_MAZES) should be > 0`, () => {
+    return mongo.getDocumentCount(MONGO_COL_MAZES).then(result => {
       expect(result).to.be.greaterThan(0);
     });
   });
 
-  it(`Scores collection document count should be > 0.`, () => {
-    return mongo.countDocuments(MONGO_COL_SCORES).then(result => {
+  it(`getDocumentCount(MONGO_COL_MAZES, {id: "FAKE_ID"}) should equal 0`, () => {
+    return mongo.getDocumentCount(MONGO_COL_MAZES, { id: 'FAKE_ID' }).then(result => {
+      expect(result).to.equal(0);
+    });
+  });
+
+  it(`getDocumentCount(MONGO_COL_SCORES) should be > 0`, () => {
+    return mongo.getDocumentCount(MONGO_COL_SCORES).then(result => {
       expect(result).to.be.greaterThan(0);
     });
   });
 
   it(`Teams collection count should be 0.`, () => {
-    return mongo.countDocuments(MONGO_COL_TEAMS).then(result => {
+    return mongo.getDocumentCount(MONGO_COL_TEAMS).then(result => {
       expect(result).to.equal(0);
     });
   });
@@ -62,36 +71,44 @@ describe('DatabaseManager Tests', () => {
   });
 
   it(`getDocument should return null if document is not found`, () => {
-    return mongo.getDocument(MONGO_COL_MAZES, '0:0:0:FakeName:FakeSeed').then(doc => {
+    return mongo.getDocument(MONGO_COL_MAZES, { id: '0:0:0:FakeName:FakeSeed' }, prjMazeStub).then(doc => {
       expect(doc).to.be.equal(null);
     });
   });
 
-  it(`getDocuments(MONGO_COL_MAZES, 1, 2, {}) should return two documents`, () => {
-    return mongo.getDocuments(MONGO_COL_MAZES, 1, 2, {}).then(mazeDocs => {
+  it(`getDocuments(MONGO_COL_MAZES, {}, ${overLimit}, 1) should only return ${MONGO_CURSOR_LIMIT} documents`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, overLimit, 1).then(mazeDocs => {
+      expect(mazeDocs.length).to.equal(MONGO_CURSOR_LIMIT);
+    });
+  });
+
+  it(`getDocuments(MONGO_COL_MAZES, {}, 2, 1) should return 2 documents`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, 2, 1).then(mazeDocs => {
       expect(mazeDocs.length).to.equal(2);
     });
   });
 
   it(`getDocuments(...) - different pages should have different documents`, () => {
-    return mongo.getDocuments(MONGO_COL_MAZES, 1, 2, {}).then(pageOne => {
-      return mongo.getDocuments(MONGO_COL_MAZES, 2, 2, {}).then(pageTwo => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, 2, 1).then(pageOne => {
+      return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, 2, 2).then(pageTwo => {
         expect(pageOne[0].id).to.not.equal(pageTwo[0].id);
       });
     });
   });
 
   it(`getDocuments({ width: 3, height: 3}) should more only 3x3 mazes`, () => {
-    return mongo.getDocuments(MONGO_COL_MAZES, 1, 10, { height: 3, width: 3 }).then(mazeDocs => {
-      let passed = true;
-      for (const maze of mazeDocs) {
-        if (maze.height !== 3 || maze.width !== 3) {
-          passed = false;
+    return mongo
+      .getDocuments(MONGO_COL_MAZES, { height: 3, width: 3 }, prjMazeStub, MONGO_CURSOR_LIMIT, 1)
+      .then(mazeDocs => {
+        let passed = true;
+        for (const maze of mazeDocs) {
+          if (maze.height !== 3 || maze.width !== 3) {
+            passed = false;
+          }
         }
-      }
 
-      return expect(passed).to.be.true;
-    });
+        return expect(passed).to.be.true;
+      });
   });
 
   it(`Same maze cannot be inserted twice`, () => {
@@ -109,7 +126,7 @@ describe('DatabaseManager Tests', () => {
   });
 
   it(`getDocument database should match maze in memory`, () => {
-    return mongo.getDocument(MONGO_COL_MAZES, mazeRaw.Id).then(doc => {
+    return mongo.getDocument(MONGO_COL_MAZES, { id: mazeRaw.Id }, {}).then(doc => {
       const mazeFromDb: Maze = new Maze(doc);
       expect(JSON.stringify(mazeFromDb)).to.equal(JSON.stringify(mazeRaw));
     });
@@ -122,15 +139,21 @@ describe('DatabaseManager Tests', () => {
     });
   });
 
-  it(`Maze from database contain updates`, () => {
-    return mongo.getDocument(MONGO_COL_MAZES, mazeRaw.Id).then(doc => {
+  it(`Maze from database should contain updates`, () => {
+    return mongo.getDocument(MONGO_COL_MAZES, { id: mazeRaw.Id }).then(doc => {
       const mazeFromDb: Maze = new Maze(doc);
       expect(mazeFromDb.Note).to.equal(mazeStored.Note);
     });
   });
 
+  it(`Updated Maze from database without projection {note: 0} should not contain a note`, () => {
+    return mongo.getDocument(MONGO_COL_MAZES, { id: mazeRaw.Id }, { note: 0 }).then(doc => {
+      return expect(doc.note).to.be.undefined;
+    });
+  });
+
   it(`Maze document should be deleted`, () => {
-    return mongo.deleteDocument(MONGO_COL_MAZES, mazeRaw.Id).then(result => {
+    return mongo.deleteDocument(MONGO_COL_MAZES, { id: mazeRaw.Id }).then(result => {
       expect(result.deletedCount).to.equal(1);
     });
   });

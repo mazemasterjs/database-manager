@@ -7,7 +7,7 @@ import {
   UpdateWriteOpResult,
 } from 'mongodb';
 
-import { Logger } from '@mazemasterjs/logger';
+import { LOG_LEVELS, Logger } from '@mazemasterjs/logger';
 
 export class DatabaseManager {
   /**
@@ -80,12 +80,12 @@ export class DatabaseManager {
       // looks like we have everything we need
       const instance = new DatabaseManager();
 
-      instance.log.debug(__filename, 'initConnection()', `Awaiting MongoClient.connect(...)`);
+      instance.logDebug('initConnection()', `Awaiting MongoClient.connect(...)`);
       instance.mongoClient = await MongoClient.connect(MONGO_CONNSTR, { useNewUrlParser: true });
 
       // set the static instance
       DatabaseManager.instance = instance;
-      instance.log.debug(__filename, 'initConnection()', 'Instance set, caching collections...');
+      instance.logDebug('initConnection()', 'Instance set, caching collections...');
 
       // Cache the collection objects as static member variables - vastly improves performance
       const db: Db = instance.mongoClient.db(MONGO_DB);
@@ -94,11 +94,7 @@ export class DatabaseManager {
       DatabaseManager.teams = db.collection(MONGO_COL_TEAMS);
 
       // w00t! Log some success :)
-      instance.log.debug(
-        __filename,
-        'initConnection()',
-        `Collections cached. DatabaseManager instance is connected and ready.`,
-      );
+      instance.logDebug('initConnection()', `Collections cached. DatabaseManager instance is connected and ready.`);
     }
 
     // return the promise containing our instance (or an error)
@@ -118,7 +114,7 @@ export class DatabaseManager {
   // most of the env vars are only needed during getInstance -> initConnection, but
   // this value needs to be a member so it can be used by class functions
   private static MONGO_CURSOR_LIMIT =
-    process.env.MONGO_CURSOR_LIMIT === '' ? 10 : parseInt(process.env.MONGO_DB + '', 10);
+    process.env.MONGO_CURSOR_LIMIT === '' ? 10 : parseInt(process.env.MONGO_CURSOR_LIMIT + '', 10);
 
   private static mazes: Collection;
   private static scores: Collection;
@@ -139,56 +135,79 @@ export class DatabaseManager {
    *
    * @param collectionName string
    */
-  public countDocuments(collectionName: string): Promise<number> {
-    this.log.debug(__filename, `countDocuments(${collectionName})`, 'Attempting to get document count.');
-    return this.getCollection(collectionName).countDocuments({});
+  public async getDocumentCount(collectionName: string, query?: any): Promise<number> {
+    // ensure optional query parameter is set to empty query
+    query = !query ? {} : query;
+
+    // need to expand and log parameters
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      this.log.debug(
+        __filename,
+        `getDocumentCount(${collectionName}, ${JSON.stringify(query)})`,
+        'Attempting to get document count.',
+      );
+    }
+
+    const count = await this.getCollection(collectionName).countDocuments(query);
+    return count === undefined ? 0 : count;
   }
 
   /**
-   * Return all documents in the given collection that match the given parameters
+   * Return documents from the specified page set that match the given parameters.
+   * For an unrestricted query, provide empty objParams (e.g. {})
    *
-   * @param collectionName string
-   * @param pageNumber number - the page
+   * @param collectionName string - the name of the collection to query
+   * @param query any - JSON object with field/value pairs to match against documents
+   * @param projection any - JSON object listing fields to return
+   * @param pageSize number - The max number of documents to return. Cannot exceed env.MONGO_CURSOR_LIMIT
+   * @param pageNumber number - The page number (from 1) to return
+   *
    */
   public async getDocuments(
     collectionName: string,
-    pageNumber: number,
+    query: any,
+    projection: any,
     pageSize: number,
-    objParams: any,
+    pageNumber: number,
   ): Promise<Array<any>> {
-    this.log.debug(
-      __filename,
-      `getDocuments(${collectionName}, ${pageSize}, ${pageNumber}, ${JSON.stringify(objParams)})`,
-      'Getting documents...',
-    );
+    let method = `getDocuments(${collectionName}, ${query}, ${pageSize}, ${pageNumber})`;
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      method = `getDocuments(${collectionName}, ${JSON.stringify(query)}, ${pageSize}, ${pageNumber})`;
+      this.logDebug(method, 'Executing query.');
+    }
 
-    // shift page number back one if >0 - it's more intuitive to start with "page 1"
+    // pageSize cannot exceed cursor limit - warn and set, if needed
+    if (pageSize > DatabaseManager.MONGO_CURSOR_LIMIT) {
+      const msg = `pageSize (${pageSize}) exceeds MONGO_CURSOR_LIMIT (${
+        DatabaseManager.MONGO_CURSOR_LIMIT
+      }) - results truncated!`;
+      pageSize = DatabaseManager.MONGO_CURSOR_LIMIT;
+      this.log.warn(__filename, method, msg);
+    }
+
+    // pageNumber is zero-based, so adjust it here if needed
     if (pageNumber > 0) {
       pageNumber--;
     }
 
-    if (pageSize > DatabaseManager.MONGO_CURSOR_LIMIT) {
-      this.log.warn(
-        __filename,
-        `getDocuments(${collectionName}, ${pageSize}, ${pageNumber}, ${JSON.stringify(objParams)})`,
-        `!! WARNING !! pageSize(${pageSize}) exceed configured MONGO_CURSOR_LIMIT (${
-          DatabaseManager.MONGO_CURSOR_LIMIT
-        }).  ONLY THE FIRST ${DatabaseManager.MONGO_CURSOR_LIMIT} RECORDS WILL BE RETURNED!`,
-      );
-    }
+    // now calculate the number of docs to skip (if any)
+    const skip = pageSize * pageNumber;
 
     // grab the cursor (with skip & limit)
     const cur = this.getCollection(collectionName)
-      .find(objParams)
-      .skip(pageNumber * pageSize)
-      .limit(pageSize);
+      .find(query)
+      .skip(skip)
+      .limit(pageSize)
+      .project(projection);
 
     // convert to array because looping cursors is annoying
     // and I don't want to have to load mongodb as a dependency
     const docs = await cur.toArray();
 
     return new Promise((resolve, reject) => {
-      /* istanbul ignore else */
+      /* istanbul ignore if */
       if (!docs || !cur) {
         reject(new Error(`Unable to retrieve [ ${collectionName} ] collection.`));
       } else {
@@ -201,12 +220,26 @@ export class DatabaseManager {
    * Return all documents in the given collection (danger - not paged!)
    *
    * @param collectionName string
+   * @param query any - JSON object with field/value pairs to match against documents
+   * @param projection any - JSON object listing fields to return
    */
-  public async getDocument(collectionName: string, docId: string): Promise<any> {
-    const method = `getDocument(${collectionName}, ${docId})`;
-    this.log.debug(__filename, method, 'Fetching document...');
-    const doc = await this.getCollection(collectionName).findOne({ id: docId });
+  public async getDocument(collectionName: string, query: any, projection?: any): Promise<any> {
+    if (projection === undefined) {
+      projection = {};
+    }
 
+    // avoid expensive parameter stringify unless debugging
+    let method = `getDocument(${collectionName}, ${query}, ${projection})`;
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      method = `getDocument(${collectionName}, ${JSON.stringify(query)}, ${JSON.stringify(projection)})`;
+      this.logDebug(method, 'Executing query.');
+    }
+
+    // query for the document
+    const doc = await this.getCollection(collectionName).findOne(query, { projection });
+
+    // warn if no doc returned
     if (!doc) {
       this.log.warn(__filename, method, 'Document not found.');
     }
@@ -218,16 +251,29 @@ export class DatabaseManager {
    * Update the document with the given docId with the given document data
    *
    * @param collectionName string
-   * @param docId string
+   * @param query string
    * @param doc <any>
    */
-  public updateDocument(collectionName: string, docId: string, doc: any): Promise<UpdateWriteOpResult> {
-    const method = `updateDocument(${collectionName}, ${docId}, ${doc})`;
-    this.log.debug(__filename, method, 'Attempting to update document.');
-    return this.getCollection(collectionName)
-      .updateOne({ id: docId }, { $set: doc }, { upsert: false })
+  public async updateDocument(collectionName: string, query: any, doc: any): Promise<UpdateWriteOpResult> {
+    // avoid expensive parameter stringify unless debugging
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      this.log.debug(
+        __filename,
+        `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
+        'Attempting to update document.',
+      );
+    }
+
+    return await this.getCollection(collectionName)
+      .updateOne({ id: query }, { $set: doc }, { upsert: false })
       .catch(err => {
-        this.log.error(__filename, method, 'Error while updating document -> ', err);
+        this.log.error(
+          __filename,
+          `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
+          'Error while updating document -> ',
+          err,
+        );
         return err;
       });
   }
@@ -238,15 +284,17 @@ export class DatabaseManager {
    * @param collectionName string
    * @param doc any
    */
-  public insertDocument(collectionName: string, doc: any): Promise<InsertOneWriteOpResult> {
-    const method = `insertDocument(${collectionName}, ${doc})`;
-    this.log.debug(__filename, method, 'Attempting to insert document.');
-
-    return this.getCollection(collectionName).insertOne(doc);
-    // .catch((err) => {
-    //     this.log.error(__filename, method, 'Error while inserting document -> ', err);
-    //     return err;
-    // });
+  public async insertDocument(collectionName: string, doc: any): Promise<InsertOneWriteOpResult> {
+    // avoid expensive parameter stringify unless debugging
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      this.log.debug(
+        __filename,
+        `insertDocument(${collectionName}, ${JSON.stringify(doc)})`,
+        'Attempting to insert document.',
+      );
+    }
+    return await this.getCollection(collectionName).insertOne(doc);
   }
 
   /**
@@ -255,13 +303,26 @@ export class DatabaseManager {
    * @param collectionName string
    * @param id string
    */
-  public deleteDocument(collectionName: string, id: string): Promise<DeleteWriteOpResultObject> {
-    this.log.debug(__filename, `deleteDocument(${id})`, 'Attempting to delete document.');
+  public async deleteDocument(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
+    // avoid expensive parameter stringify unless debugging
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      this.log.debug(
+        __filename,
+        `deleteDocument(${collectionName}, ${JSON.stringify(query)})`,
+        'Attempting to delete document.',
+      );
+    }
 
-    return this.getCollection(collectionName)
-      .deleteOne({ id })
+    return await this.getCollection(collectionName)
+      .deleteOne(query)
       .catch(err => {
-        this.log.error(__filename, 'deleteDocument()', 'Error while deleting document', err);
+        this.log.error(
+          __filename,
+          `deleteDocument(${collectionName}, ${JSON.stringify(query)})`,
+          'Error while deleting document',
+          err,
+        );
         return err;
       });
   }
@@ -284,7 +345,7 @@ export class DatabaseManager {
   public disconnect() {
     /* istanbul ignore else */
     if (this.mongoClient && this.mongoClient.isConnected()) {
-      this.log.debug(__filename, 'disconnect()', 'Closing MongoClient Connection');
+      this.logDebug('disconnect()', 'Closing MongoClient Connection');
       this.mongoClient.close();
     } else {
       this.log.warn(__filename, 'disconnect()', 'MongoClient is not ' + (this.mongoClient ? 'defined' : 'connected'));
@@ -300,7 +361,7 @@ export class DatabaseManager {
    * @throws Undefined / Not Connected error
    */
   private getCollection(collectionName: string): Collection {
-    this.log.trace(__filename, `getCollection(${collectionName})`, 'Getting collection.');
+    this.logDebug(`getCollection(${collectionName})`, 'Getting collection.');
 
     /* istanbul ignore else */
     if (this.mongoClient && this.mongoClient.isConnected()) {
@@ -316,6 +377,19 @@ export class DatabaseManager {
       }
     } else {
       throw new Error('mongoClient is ' + (this.mongoClient ? 'undefined' : 'not connected'));
+    }
+  }
+
+  /**
+   * Simple log wrapper to improve performance when not debug logging
+   *
+   * @param method string - method & parameters to log
+   * @param message string - message to log
+   */
+  private logDebug(method: string, message: string) {
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.INFO) {
+      this.log.debug(__filename, method, message);
     }
   }
 }
