@@ -367,20 +367,15 @@ export class DatabaseManager {
   private getCollection(collectionName: string): Collection {
     this.logTrace(`getCollection(${collectionName})`, 'Getting collection.');
 
-    /* istanbul ignore else */
-    if (this.mongoClient && this.mongoClient.isConnected()) {
-      switch (collectionName) {
-        case 'mazes':
-          return DatabaseManager.mazes;
-        case 'scores':
-          return DatabaseManager.scores;
-        case 'teams':
-          return DatabaseManager.teams;
-        default:
-          throw new Error(`Invalid collection name: ${collectionName}`);
-      }
-    } else {
-      throw new Error('mongoClient is ' + (this.mongoClient ? 'undefined' : 'not connected'));
+    switch (collectionName) {
+      case 'mazes':
+        return DatabaseManager.mazes;
+      case 'scores':
+        return DatabaseManager.scores;
+      case 'teams':
+        return DatabaseManager.teams;
+      default:
+        throw new Error(`Invalid collection name: ${collectionName}`);
     }
   }
 
