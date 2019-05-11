@@ -18,7 +18,7 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
   -- pageNumber indicates the page set to return
 - Optional parameters (denoted by ?) may be omitted - default values, typically select-all wildcards, will be used instead.
 
-### Public Method Signatures (v1.2.0)
+### Public Method Signatures (v1.2.3)
 
 - `public static async getInstance(): Promise<any>`
 - `public async getDocumentCount(collectionName: string, query?: any): Promise<number>`
@@ -36,7 +36,11 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
-### v1.1.0 -> v1.2.0
+### v1.1.0 -> v1.2.3
+
+- Raised several debug logs to trace level
+
+### v1.1.0 -> v1.2.2
 
 - **BREAKING CHANGE** Added cursor limit (env.MONGO_CURSOR_LIMIT). Current value value is 10.
 - **BREAKING CHANGE** getDocuments(collectionName: string, query: any,_ projection: any, pageSize: number, pageNumber: number _)
