@@ -27,3 +27,6 @@ sonar-project.properties
 
 # ignore sample service.json file
 service.json
+
+# ignore build scripts
+publish.bat
