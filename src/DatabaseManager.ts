@@ -305,7 +305,7 @@ export class DatabaseManager {
    * Delete the document with the given ID from the specified collection
    *
    * @param collectionName string
-   * @param id string
+   * @param query string
    */
   public async deleteDocument(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
     // avoid expensive parameter stringify unless debugging
@@ -332,6 +332,36 @@ export class DatabaseManager {
   }
 
   /**
+   * Delete all documents that match the given query parameters from the specified collection
+   *
+   * @param collectionName string
+   * @param query string
+   */
+  public async deleteDocuments(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
+    // avoid expensive parameter stringify unless debugging
+    /* istanbul ignore if */
+    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
+      this.log.trace(
+        __filename,
+        `deleteDocuments(${collectionName}, ${JSON.stringify(query)})`,
+        'Attempting to delete document.',
+      );
+    }
+
+    return await this.getCollection(collectionName)
+      .deleteMany(query)
+      .catch(err => {
+        this.log.error(
+          __filename,
+          `deleteDocuments(${collectionName}, ${JSON.stringify(query)})`,
+          'Error while deleting document',
+          err,
+        );
+        return err;
+      });
+  }
+
+  /**
    * Returns true of the db object is defined.
    */
   public isConnected(): boolean {
@@ -346,7 +376,7 @@ export class DatabaseManager {
   /**
    * Close the database connection.
    */
-  public disconnect() {
+  public disconnect(): boolean {
     /* istanbul ignore else */
     if (this.mongoClient && this.mongoClient.isConnected()) {
       this.logDebug('disconnect()', 'Closing MongoClient Connection');
@@ -354,6 +384,7 @@ export class DatabaseManager {
     } else {
       this.log.warn(__filename, 'disconnect()', 'MongoClient is not ' + (this.mongoClient ? 'defined' : 'connected'));
     }
+    return true;
   }
 
   /**
