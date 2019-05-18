@@ -261,13 +261,10 @@ export class DatabaseManager {
   public async updateDocument(collectionName: string, query: any, doc: any): Promise<UpdateWriteOpResult> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
-      this.log.trace(
-        __filename,
-        `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
-        'Attempting to update document.',
-      );
-    }
+    this.logTrace(
+      `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
+      'Attempting to update document.',
+    );
 
     return await this.getCollection(collectionName)
       .updateOne(query, { $set: doc }, { upsert: false })
