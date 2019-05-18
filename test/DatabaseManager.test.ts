@@ -162,7 +162,7 @@ describe('DatabaseManager Tests', () => {
     });
   });
 
-  it(`A test maze with MultiDeleteTest-name-1 should be inserted`, () => {
+  it(`A test maze with name MultiDeleteTest-name-1 should be inserted`, () => {
     const m1 = new Maze().generate(3, 3, 3, 'MultiDeleteTest-name-1', 'MultiDeleteTest-seed-1');
 
     return mongo
@@ -175,7 +175,7 @@ describe('DatabaseManager Tests', () => {
       });
   });
 
-  it(`A test maze with MultiDeleteTest-name-2 should be inserted`, () => {
+  it(`A test maze with name MultiDeleteTest-name-2 should be inserted`, () => {
     const m2 = new Maze().generate(3, 3, 3, 'MultiDeleteTest-name-2', 'MultiDeleteTest-seed-2');
     return mongo
       .insertDocument(MONGO_COL_MAZES, m2)
@@ -190,6 +190,44 @@ describe('DatabaseManager Tests', () => {
   it(`Two test mazes fitting the regex /^MultiDeleteTest-name/ should be deleted`, () => {
     return mongo
       .deleteDocuments(MONGO_COL_MAZES, { name: /^MultiDeleteTest-name/ })
+      .then(r3 => {
+        expect(r3.deletedCount).to.equal(2);
+      })
+      .catch((err: Error) => {
+        assert.fail(err);
+      });
+  });
+
+  it(`A test maze with name MultiDeleteTest-width-1 and width 13 should be inserted`, () => {
+    const m1 = new Maze().generate(3, 13, 3, 'MultiDeleteTest-width-1', 'MultiDeleteTest-seed-1');
+
+    return mongo
+      .insertDocument(MONGO_COL_MAZES, m1)
+      .then(result => {
+        expect(result.insertedCount).to.equal(1);
+      })
+      .catch(err => {
+        expect(err.message).to.contain('E11000');
+      });
+  });
+
+  it(`A test maze with name MultiDeleteTest-width-2 and width 13 should be inserted`, () => {
+    const m2 = new Maze().generate(3, 13, 3, 'MultiDeleteTest-width-2', 'MultiDeleteTest-seed-2');
+    return mongo
+      .insertDocument(MONGO_COL_MAZES, m2)
+      .then(result => {
+        expect(result.insertedCount).to.equal(1);
+      })
+      .catch(err => {
+        expect(err.message).to.contain('E11000');
+      });
+  });
+
+  it(`Two test mazes with width 13 should be deleted`, () => {
+    const query = { width: 13 };
+
+    return mongo
+      .deleteDocuments(MONGO_COL_MAZES, query)
       .then(r3 => {
         expect(r3.deletedCount).to.equal(2);
       })

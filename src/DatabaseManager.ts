@@ -310,13 +310,7 @@ export class DatabaseManager {
   public async deleteDocument(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
-      this.log.trace(
-        __filename,
-        `deleteDocument(${collectionName}, ${JSON.stringify(query)})`,
-        'Attempting to delete document.',
-      );
-    }
+    this.logTrace(`deleteDocument(${collectionName}, ${JSON.stringify(query)})`, 'Attempting to delete document.');
 
     return await this.getCollection(collectionName)
       .deleteOne(query)
@@ -337,19 +331,20 @@ export class DatabaseManager {
    * @param collectionName string
    * @param query string
    */
-  public async deleteDocuments(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
+  public async deleteDocuments(collectionName: string, query: object): Promise<DeleteWriteOpResultObject> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
-      this.log.trace(
-        __filename,
-        `deleteDocuments(${collectionName}, ${JSON.stringify(query)})`,
-        'Attempting to delete document.',
-      );
-    }
+    this.logTrace(`deleteDocuments(${collectionName}, ${JSON.stringify(query)})`, 'Attempting to delete documents.');
 
     return await this.getCollection(collectionName)
       .deleteMany(query)
+      .then(result => {
+        this.logTrace(
+          `deleteDocuments(${collectionName}, ${JSON.stringify(query)})`,
+          `${result.deletedCount} documents deleted.`,
+        );
+        return result;
+      })
       .catch(err => {
         this.log.error(
           __filename,

@@ -37,6 +37,12 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
+### v1.2.7
+
+- fixed promise return bug in deleteDocuments()
+- more logging tweaks
+- updated dependencies
+
 ### v1.2.6
 
 - added deleteDocuments(collectionName: string, query: any) to delete multiple documents
