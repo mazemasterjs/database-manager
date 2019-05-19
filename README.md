@@ -37,6 +37,10 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
+### v1.3.0
+
+- added support for trophies collection
+
 ### v1.2.7
 
 - fixed promise return bug in deleteDocuments()

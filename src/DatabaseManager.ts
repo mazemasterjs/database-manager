@@ -31,6 +31,7 @@ export class DatabaseManager {
       const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
       const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
       const MONGO_COL_SCORES = process.env.MONGO_COL_SCORES + '';
+      const MONGO_COL_TROPHIES = process.env.MONGO_COL_TROPHIES + '';
 
       // Then make sure that they were all found...
       let errs = '';
@@ -58,6 +59,11 @@ export class DatabaseManager {
       /* istanbul ignore if */
       if (MONGO_COL_SCORES === '') {
         errs += 'MONGO_COL_SCORES ';
+      }
+
+      /* istanbul ignore if */
+      if (MONGO_COL_TROPHIES === '') {
+        errs += 'MONGO_COL_TROPHIES ';
       }
 
       // If any errors were found, we need to bail out here.
@@ -92,6 +98,7 @@ export class DatabaseManager {
       DatabaseManager.mazes = db.collection(MONGO_COL_MAZES);
       DatabaseManager.scores = db.collection(MONGO_COL_SCORES);
       DatabaseManager.teams = db.collection(MONGO_COL_TEAMS);
+      DatabaseManager.trophies = db.collection(MONGO_COL_TROPHIES);
 
       // w00t! Log some success :)
       instance.logDebug('initConnection()', `Collections cached. DatabaseManager instance is connected and ready.`);
@@ -118,8 +125,8 @@ export class DatabaseManager {
 
   private static mazes: Collection;
   private static scores: Collection;
-  // private static games: Collection;
   private static teams: Collection;
+  private static trophies: Collection;
 
   // get logger instance
   private log: Logger = Logger.getInstance();
@@ -397,6 +404,8 @@ export class DatabaseManager {
         return DatabaseManager.scores;
       case 'teams':
         return DatabaseManager.teams;
+      case 'trophies':
+        return DatabaseManager.trophies;
       default:
         throw new Error(`Invalid collection name: ${collectionName}`);
     }
