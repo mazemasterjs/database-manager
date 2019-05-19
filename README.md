@@ -26,8 +26,9 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 - `public async getDocument(collectionName: string, query: any, projection?: any): Promise<any>`
 - `public async updateDocument(collectionName: string, query: any, doc: any): Promise<UpdateWriteOpResult>`
 - `public async deleteDocument(collectionName: string, query: any): Promise<DeleteWriteOpResultObject>`
+- `public async deleteDocuments(collectionName: string, query: any): Promise<DeleteWriteOpResultObject>`
 - `public isConnected(): boolean`
-- `public disconnect()`
+- `public disconnect(): boolean`
 
 ## Notes
 
@@ -36,7 +37,24 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
-### v1.1.0 -> v1.2.3
+### v1.3.0
+
+- added support for trophies collection
+
+### v1.2.7
+
+- fixed promise return bug in deleteDocuments()
+- more logging tweaks
+- updated dependencies
+
+### v1.2.6
+
+- added deleteDocuments(collectionName: string, query: any) to delete multiple documents
+- updated disconnect() to disconnect(): boolean - now returns true after completion
+- added disconnect delay to mocha "after()" hook
+- added tests for deleteDocuments()
+
+### v1.2.3
 
 - Raised several debug logs to trace level
 

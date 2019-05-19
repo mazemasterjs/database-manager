@@ -24,4 +24,9 @@ copy package.json dist\
 copy README.md dist\
 copy .npmignore dist\
 
-npm publish dist|rem
+if "%~1" neq "--package-only" (
+    echo Publishing module...
+    npm publish dist|rem
+) else (
+    echo "--package-only" flag set, publish skipped.
+)

@@ -29,8 +29,11 @@ describe('DatabaseManager Tests', () => {
   );
 
   after('Mongo Client should disconnect', () => {
-    mongo.disconnect();
-    expect(mongo.isConnected()).to.equal(false);
+    // wait 1 second for the last db operation to complete
+    // before ripping away the connection
+    return setTimeout(() => {
+      expect(mongo.disconnect()).to.equal(true);
+    }, 1000);
   });
 
   it(`MongoDB should be connected`, () => {
@@ -52,7 +55,7 @@ describe('DatabaseManager Tests', () => {
 
   it(`getDocumentCount(MONGO_COL_SCORES) should be > 0`, () => {
     return mongo.getDocumentCount(MONGO_COL_SCORES).then(result => {
-      expect(result).to.be.greaterThan(0);
+      expect(result).to.be.greaterThan(-1);
     });
   });
 
@@ -108,7 +111,7 @@ describe('DatabaseManager Tests', () => {
           }
         }
 
-        return expect(passed).to.be.true;
+        expect(passed).to.be.equal(true);
       });
   });
 
@@ -157,5 +160,79 @@ describe('DatabaseManager Tests', () => {
     return mongo.deleteDocument(MONGO_COL_MAZES, { id: mazeRaw.Id }).then(result => {
       expect(result.deletedCount).to.equal(1);
     });
+  });
+
+  it(`A test maze with name MultiDeleteTest-name-1 should be inserted`, () => {
+    const m1 = new Maze().generate(3, 3, 3, 'MultiDeleteTest-name-1', 'MultiDeleteTest-seed-1');
+
+    return mongo
+      .insertDocument(MONGO_COL_MAZES, m1)
+      .then(result => {
+        expect(result.insertedCount).to.equal(1);
+      })
+      .catch(err => {
+        expect(err.message).to.contain('E11000');
+      });
+  });
+
+  it(`A test maze with name MultiDeleteTest-name-2 should be inserted`, () => {
+    const m2 = new Maze().generate(3, 3, 3, 'MultiDeleteTest-name-2', 'MultiDeleteTest-seed-2');
+    return mongo
+      .insertDocument(MONGO_COL_MAZES, m2)
+      .then(result => {
+        expect(result.insertedCount).to.equal(1);
+      })
+      .catch(err => {
+        expect(err.message).to.contain('E11000');
+      });
+  });
+
+  it(`Two test mazes fitting the regex /^MultiDeleteTest-name/ should be deleted`, () => {
+    return mongo
+      .deleteDocuments(MONGO_COL_MAZES, { name: /^MultiDeleteTest-name/ })
+      .then(r3 => {
+        expect(r3.deletedCount).to.equal(2);
+      })
+      .catch((err: Error) => {
+        assert.fail(err);
+      });
+  });
+
+  it(`A test maze with name MultiDeleteTest-width-1 and width 13 should be inserted`, () => {
+    const m1 = new Maze().generate(3, 13, 3, 'MultiDeleteTest-width-1', 'MultiDeleteTest-seed-1');
+
+    return mongo
+      .insertDocument(MONGO_COL_MAZES, m1)
+      .then(result => {
+        expect(result.insertedCount).to.equal(1);
+      })
+      .catch(err => {
+        expect(err.message).to.contain('E11000');
+      });
+  });
+
+  it(`A test maze with name MultiDeleteTest-width-2 and width 13 should be inserted`, () => {
+    const m2 = new Maze().generate(3, 13, 3, 'MultiDeleteTest-width-2', 'MultiDeleteTest-seed-2');
+    return mongo
+      .insertDocument(MONGO_COL_MAZES, m2)
+      .then(result => {
+        expect(result.insertedCount).to.equal(1);
+      })
+      .catch(err => {
+        expect(err.message).to.contain('E11000');
+      });
+  });
+
+  it(`Two test mazes with width 13 should be deleted`, () => {
+    const query = { width: 13 };
+
+    return mongo
+      .deleteDocuments(MONGO_COL_MAZES, query)
+      .then(r3 => {
+        expect(r3.deletedCount).to.equal(2);
+      })
+      .catch((err: Error) => {
+        assert.fail(err);
+      });
   });
 });

@@ -31,6 +31,7 @@ export class DatabaseManager {
       const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
       const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
       const MONGO_COL_SCORES = process.env.MONGO_COL_SCORES + '';
+      const MONGO_COL_TROPHIES = process.env.MONGO_COL_TROPHIES + '';
 
       // Then make sure that they were all found...
       let errs = '';
@@ -58,6 +59,11 @@ export class DatabaseManager {
       /* istanbul ignore if */
       if (MONGO_COL_SCORES === '') {
         errs += 'MONGO_COL_SCORES ';
+      }
+
+      /* istanbul ignore if */
+      if (MONGO_COL_TROPHIES === '') {
+        errs += 'MONGO_COL_TROPHIES ';
       }
 
       // If any errors were found, we need to bail out here.
@@ -92,6 +98,7 @@ export class DatabaseManager {
       DatabaseManager.mazes = db.collection(MONGO_COL_MAZES);
       DatabaseManager.scores = db.collection(MONGO_COL_SCORES);
       DatabaseManager.teams = db.collection(MONGO_COL_TEAMS);
+      DatabaseManager.trophies = db.collection(MONGO_COL_TROPHIES);
 
       // w00t! Log some success :)
       instance.logDebug('initConnection()', `Collections cached. DatabaseManager instance is connected and ready.`);
@@ -118,8 +125,8 @@ export class DatabaseManager {
 
   private static mazes: Collection;
   private static scores: Collection;
-  // private static games: Collection;
   private static teams: Collection;
+  private static trophies: Collection;
 
   // get logger instance
   private log: Logger = Logger.getInstance();
@@ -261,13 +268,10 @@ export class DatabaseManager {
   public async updateDocument(collectionName: string, query: any, doc: any): Promise<UpdateWriteOpResult> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
-      this.log.trace(
-        __filename,
-        `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
-        'Attempting to update document.',
-      );
-    }
+    this.logTrace(
+      `updateDocument(${collectionName}, ${JSON.stringify(query)}, ${doc})`,
+      'Attempting to update document.',
+    );
 
     return await this.getCollection(collectionName)
       .updateOne(query, { $set: doc }, { upsert: false })
@@ -305,18 +309,12 @@ export class DatabaseManager {
    * Delete the document with the given ID from the specified collection
    *
    * @param collectionName string
-   * @param id string
+   * @param query string
    */
   public async deleteDocument(collectionName: string, query: any): Promise<DeleteWriteOpResultObject> {
     // avoid expensive parameter stringify unless debugging
     /* istanbul ignore if */
-    if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
-      this.log.trace(
-        __filename,
-        `deleteDocument(${collectionName}, ${JSON.stringify(query)})`,
-        'Attempting to delete document.',
-      );
-    }
+    this.logTrace(`deleteDocument(${collectionName}, ${JSON.stringify(query)})`, 'Attempting to delete document.');
 
     return await this.getCollection(collectionName)
       .deleteOne(query)
@@ -324,6 +322,37 @@ export class DatabaseManager {
         this.log.error(
           __filename,
           `deleteDocument(${collectionName}, ${JSON.stringify(query)})`,
+          'Error while deleting document',
+          err,
+        );
+        return err;
+      });
+  }
+
+  /**
+   * Delete all documents that match the given query parameters from the specified collection
+   *
+   * @param collectionName string
+   * @param query string
+   */
+  public async deleteDocuments(collectionName: string, query: object): Promise<DeleteWriteOpResultObject> {
+    // avoid expensive parameter stringify unless debugging
+    /* istanbul ignore if */
+    this.logTrace(`deleteDocuments(${collectionName}, ${JSON.stringify(query)})`, 'Attempting to delete documents.');
+
+    return await this.getCollection(collectionName)
+      .deleteMany(query)
+      .then(result => {
+        this.logTrace(
+          `deleteDocuments(${collectionName}, ${JSON.stringify(query)})`,
+          `${result.deletedCount} documents deleted.`,
+        );
+        return result;
+      })
+      .catch(err => {
+        this.log.error(
+          __filename,
+          `deleteDocuments(${collectionName}, ${JSON.stringify(query)})`,
           'Error while deleting document',
           err,
         );
@@ -346,7 +375,7 @@ export class DatabaseManager {
   /**
    * Close the database connection.
    */
-  public disconnect() {
+  public disconnect(): boolean {
     /* istanbul ignore else */
     if (this.mongoClient && this.mongoClient.isConnected()) {
       this.logDebug('disconnect()', 'Closing MongoClient Connection');
@@ -354,6 +383,7 @@ export class DatabaseManager {
     } else {
       this.log.warn(__filename, 'disconnect()', 'MongoClient is not ' + (this.mongoClient ? 'defined' : 'connected'));
     }
+    return true;
   }
 
   /**
@@ -374,6 +404,8 @@ export class DatabaseManager {
         return DatabaseManager.scores;
       case 'teams':
         return DatabaseManager.teams;
+      case 'trophies':
+        return DatabaseManager.trophies;
       default:
         throw new Error(`Invalid collection name: ${collectionName}`);
     }
