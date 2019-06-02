@@ -170,6 +170,7 @@ export class DatabaseManager {
    *
    * @param collectionName string - the name of the collection to query
    * @param query any - JSON object with field/value pairs to match against documents
+   * @param sort any - JSON object listing fields and sort types: {lastUpdated: -1, name: 1} (sort by lastUpdated (desc) and name (asc) )
    * @param projection any - JSON object listing fields to return
    * @param pageSize number - The max number of documents to return. Cannot exceed env.MONGO_CURSOR_LIMIT
    * @param pageNumber number - The page number (from 1) to return
@@ -178,11 +179,13 @@ export class DatabaseManager {
   public async getDocuments(
     collectionName: string,
     query: any,
+    sort: any,
     projection: any,
     pageSize: number,
     pageNumber: number,
   ): Promise<Array<any>> {
     let method = `getDocuments(${collectionName}, ${query}, ${pageSize}, ${pageNumber})`;
+
     /* istanbul ignore if */
     if (this.log.LogLevel > LOG_LEVELS.DEBUG) {
       method = `getDocuments(${collectionName}, ${JSON.stringify(query)}, ${pageSize}, ${pageNumber})`;
@@ -209,6 +212,7 @@ export class DatabaseManager {
     // grab the cursor (with skip & limit)
     const cur = this.getCollection(collectionName)
       .find(query)
+      .sort(sort)
       .skip(skip)
       .limit(pageSize)
       .project(projection);

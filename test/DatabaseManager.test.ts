@@ -61,7 +61,7 @@ describe('DatabaseManager Tests', () => {
 
   it(`Teams collection count should be 0.`, () => {
     return mongo.getDocumentCount(MONGO_COL_TEAMS).then(result => {
-      expect(result).to.equal(0);
+      expect(result).to.equal(3);
     });
   });
 
@@ -81,20 +81,20 @@ describe('DatabaseManager Tests', () => {
   });
 
   it(`getDocuments(MONGO_COL_MAZES, {}, ${overLimit}, 1) should only return ${MONGO_CURSOR_LIMIT} documents`, () => {
-    return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, overLimit, 1).then(mazeDocs => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, {}, prjMazeStub, overLimit, 1).then(mazeDocs => {
       expect(mazeDocs.length).to.equal(MONGO_CURSOR_LIMIT);
     });
   });
 
   it(`getDocuments(MONGO_COL_MAZES, {}, 2, 1) should return 2 documents`, () => {
-    return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, 2, 1).then(mazeDocs => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, {}, prjMazeStub, 2, 1).then(mazeDocs => {
       expect(mazeDocs.length).to.equal(2);
     });
   });
 
   it(`getDocuments(...) - different pages should have different documents`, () => {
-    return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, 2, 1).then(pageOne => {
-      return mongo.getDocuments(MONGO_COL_MAZES, {}, prjMazeStub, 2, 2).then(pageTwo => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, {}, prjMazeStub, 2, 1).then(pageOne => {
+      return mongo.getDocuments(MONGO_COL_MAZES, {}, {}, prjMazeStub, 2, 2).then(pageTwo => {
         expect(pageOne[0].id).to.not.equal(pageTwo[0].id);
       });
     });
@@ -102,7 +102,7 @@ describe('DatabaseManager Tests', () => {
 
   it(`getDocuments({ width: 3, height: 3}) should more only 3x3 mazes`, () => {
     return mongo
-      .getDocuments(MONGO_COL_MAZES, { height: 3, width: 3 }, prjMazeStub, MONGO_CURSOR_LIMIT, 1)
+      .getDocuments(MONGO_COL_MAZES, { height: 3, width: 3 }, {}, prjMazeStub, MONGO_CURSOR_LIMIT, 1)
       .then(mazeDocs => {
         let passed = true;
         for (const maze of mazeDocs) {
@@ -234,5 +234,17 @@ describe('DatabaseManager Tests', () => {
       .catch((err: Error) => {
         assert.fail(err);
       });
+  });
+
+  it(`getDocuments(...) - sorting decending by shortestPathLength should return mazeId 45:45:10:WitWan_v0.0.1`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, { shortestPathLength: -1 }, prjMazeStub, 2, 1).then(pageOne => {
+      expect(pageOne[0].id).to.equal('45:45:10:WitWan_v0.0.1');
+    });
+  });
+
+  it(`getDocuments(...) - sorting ascending by shortestPathLength should return mazeId 3:3:1:TinTre_v0.0.1`, () => {
+    return mongo.getDocuments(MONGO_COL_MAZES, {}, { shortestPathLength: 1 }, prjMazeStub, 2, 1).then(pageOne => {
+      expect(pageOne[0].id).to.equal('3:3:1:TinTre_v0.0.1');
+    });
   });
 });
