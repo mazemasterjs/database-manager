@@ -37,7 +37,7 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
-### v1.4.0
+### v1.4.1
 
 - added sort support to getDocuments() : @param sort any - JSON object listing fields and sort types: {lastUpdated: -1, name: 1} (-1=descending, 1=ascending)
 
