@@ -11,6 +11,10 @@ describe('DatabaseManager Tests', () => {
   const botCodeVer1 = "function sayHi() { console.log('hello'); }";
   const botCodeVer1a = "function sayHi() { console.log('hi'); }";
   const botCodeVer2 = "function sayHowdy() { console.log('howdy'); }";
+  // const botCodeId = 'jd-test-bot-2';
+  // const botCodeVer1 = "function sayBye() { console.log('goodby'); }";
+  // const botCodeVer1a = "function sayBye() { console.log('bye'); }";
+  // const botCodeVer2 = "function sayCyaLater() { console.log('cya l8r'); }";
   const prjMazeStub = { _id: 0, cells: 0, textRender: 0 };
   const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
   const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
@@ -256,7 +260,7 @@ describe('DatabaseManager Tests', () => {
   /* BOTCODE TESTS */
 
   it(`insertDocument(...) - bot "${botCodeId}" should have a new code version inserted`, () => {
-    const newBotCode = { botId: botCodeId, version: 1, code: botCodeVer1 };
+    const newBotCode = { botId: botCodeId, version: 1, code: botCodeVer1, lastUpdated: Date.now() };
     return mongo.insertDocument(MONGO_COL_BOTCODE, newBotCode).then(result => {
       expect(result.insertedCount).to.equal(1);
     });
@@ -277,7 +281,7 @@ describe('DatabaseManager Tests', () => {
 
   it(`updateDocument(...) - bot "${botCodeId}" code version should not change on update`, async () => {
     let codeDoc = await mongo
-      .getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1)
+      .getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }, { version: 1 }, {}, 10, 1)
       .then(pageOne => {
         return pageOne[0];
       });
@@ -299,7 +303,7 @@ describe('DatabaseManager Tests', () => {
   });
 
   it(`insertDocument(...) - bot "${botCodeId}" should have a new code version inserted`, () => {
-    const newBotCode = { botId: botCodeId, version: 2, code: botCodeVer2 };
+    const newBotCode = { botId: botCodeId, version: 2, code: botCodeVer2, lastUpdated: Date.now() };
     return mongo.insertDocument(MONGO_COL_BOTCODE, newBotCode).then(result => {
       expect(result.insertedCount).to.equal(1);
     });
@@ -323,6 +327,7 @@ describe('DatabaseManager Tests', () => {
       expect(count).to.equal(2);
     });
   });
+
   it(`deleteDocument(...) bot code doc v1 should be deleted`, () => {
     return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }).then(result => {
       expect(result.deletedCount).to.equal(1);
