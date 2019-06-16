@@ -37,6 +37,10 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
+### v1.5.0
+
+- Added support for a bot_code collection to be used by service-base/team to store, version, and retrieve bot code scripts
+
 ### v1.4.1
 
 - added sort support to getDocuments() : @param sort any - JSON object listing fields and sort types: {lastUpdated: -1, name: 1} (-1=descending, 1=ascending)

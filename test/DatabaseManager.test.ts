@@ -7,9 +7,14 @@ describe('DatabaseManager Tests', () => {
   let mongo: DatabaseManager;
   let mazeRaw: Maze;
   let mazeStored: Maze;
+  const botCodeId = 'jd-test-bot';
+  const botCodeVer1 = "function sayHi() { console.log('hello'); }";
+  const botCodeVer1a = "function sayHi() { console.log('hi'); }";
+  const botCodeVer2 = "function sayHowdy() { console.log('howdy'); }";
   const prjMazeStub = { _id: 0, cells: 0, textRender: 0 };
   const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
   const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
+  const MONGO_COL_BOTCODE = process.env.MONGO_COL_BOTCODE + '';
   const MONGO_COL_SCORES = process.env.MONGO_COL_SCORES + '';
   const MONGO_CURSOR_LIMIT: number = parseInt(process.env.MONGO_CURSOR_LIMIT + '', 10);
   const overLimit = MONGO_CURSOR_LIMIT + 5;
@@ -238,13 +243,101 @@ describe('DatabaseManager Tests', () => {
 
   it(`getDocuments(...) - sorting decending by shortestPathLength should return mazeId 45:45:10:WitWan_v0.0.1`, () => {
     return mongo.getDocuments(MONGO_COL_MAZES, {}, { shortestPathLength: -1 }, prjMazeStub, 2, 1).then(pageOne => {
-      expect(pageOne[0].id).to.equal('45:45:10:WitWan_v0.0.1');
+      expect(pageOne[0].id).to.equal('60:60:10:SisStr_v1.0.0');
     });
   });
 
   it(`getDocuments(...) - sorting ascending by shortestPathLength should return mazeId 3:3:1:TinTre_v0.0.1`, () => {
     return mongo.getDocuments(MONGO_COL_MAZES, {}, { shortestPathLength: 1 }, prjMazeStub, 2, 1).then(pageOne => {
-      expect(pageOne[0].id).to.equal('3:3:1:TinTre_v0.0.1');
+      expect(pageOne[0].id).to.equal('3:3:1:TinTre_v1.0.0');
+    });
+  });
+
+  /* BOTCODE TESTS */
+
+  it(`insertDocument(...) - bot "${botCodeId}" should have a new code version inserted`, () => {
+    const newBotCode = { botId: botCodeId, version: 1, code: botCodeVer1 };
+    return mongo.insertDocument(MONGO_COL_BOTCODE, newBotCode).then(result => {
+      expect(result.insertedCount).to.equal(1);
+    });
+  });
+
+  it(`getDocuments(...) - bot "${botCodeId}" should have bot code versions`, () => {
+    return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
+      expect(pageOne[0].version).to.equal(1);
+    });
+  });
+
+  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1`, () => {
+    return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
+      const codeDoc = pageOne[0];
+      expect(codeDoc.code).to.equal(botCodeVer1);
+    });
+  });
+
+  it(`updateDocument(...) - bot "${botCodeId}" code version should not change on update`, async () => {
+    let codeDoc = await mongo
+      .getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1)
+      .then(pageOne => {
+        return pageOne[0];
+      });
+
+    codeDoc.code = botCodeVer1a;
+    codeDoc = await mongo.updateDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }, codeDoc);
+
+    return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
+      const newDoc = pageOne[0];
+      return expect(newDoc.version).to.equal(1);
+    });
+  });
+
+  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1a`, () => {
+    return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
+      const codeDoc = pageOne[0];
+      expect(codeDoc.code).to.equal(botCodeVer1a);
+    });
+  });
+
+  it(`insertDocument(...) - bot "${botCodeId}" should have a new code version inserted`, () => {
+    const newBotCode = { botId: botCodeId, version: 2, code: botCodeVer2 };
+    return mongo.insertDocument(MONGO_COL_BOTCODE, newBotCode).then(result => {
+      expect(result.insertedCount).to.equal(1);
+    });
+  });
+  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1a`, () => {
+    return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: -1 }, {}, 10, 1).then(pageOne => {
+      const codeDoc = pageOne[0];
+      expect(codeDoc.version).to.equal(2);
+    });
+  });
+
+  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1a`, () => {
+    return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: -1 }, {}, 10, 1).then(pageOne => {
+      const codeDoc = pageOne[0];
+      expect(codeDoc.code).to.equal(botCodeVer2);
+    });
+  });
+
+  it(`getDocumentCount(MONGO_COL_BOTCODE, botCodeId=${botCodeId}) should be 2`, () => {
+    return mongo.getDocumentCount(MONGO_COL_BOTCODE, { botId: botCodeId }).then(count => {
+      expect(count).to.equal(2);
+    });
+  });
+  it(`deleteDocument(...) bot code doc v1 should be deleted`, () => {
+    return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }).then(result => {
+      expect(result.deletedCount).to.equal(1);
+    });
+  });
+
+  it(`deleteDocument(...) bot code doc v2 should be deleted`, () => {
+    return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 2 }).then(result => {
+      expect(result.deletedCount).to.equal(1);
+    });
+  });
+
+  it(`getDocumentCount(MONGO_COL_BOTCODE, botCodeId=${botCodeId}) should be 0`, () => {
+    return mongo.getDocumentCount(MONGO_COL_BOTCODE, { botId: botCodeId }).then(count => {
+      expect(count).to.equal(0);
     });
   });
 });

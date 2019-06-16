@@ -30,6 +30,7 @@ export class DatabaseManager {
       const MONGO_DB = process.env.MONGO_DB + '';
       const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
       const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
+      const MONGO_COL_BOTCODE = process.env.MONGO_COL_BOTCODE + '';
       const MONGO_COL_SCORES = process.env.MONGO_COL_SCORES + '';
       const MONGO_COL_TROPHIES = process.env.MONGO_COL_TROPHIES + '';
 
@@ -54,6 +55,11 @@ export class DatabaseManager {
       /* istanbul ignore if */
       if (MONGO_COL_TEAMS === '') {
         errs += 'MONGO_COL_TEAMS ';
+      }
+
+      /* istanbul ignore if */
+      if (MONGO_COL_BOTCODE === '') {
+        errs += 'MONGO_COL_BOTCODE ';
       }
 
       /* istanbul ignore if */
@@ -98,6 +104,7 @@ export class DatabaseManager {
       DatabaseManager.mazes = db.collection(MONGO_COL_MAZES);
       DatabaseManager.scores = db.collection(MONGO_COL_SCORES);
       DatabaseManager.teams = db.collection(MONGO_COL_TEAMS);
+      DatabaseManager.botcode = db.collection(MONGO_COL_BOTCODE);
       DatabaseManager.trophies = db.collection(MONGO_COL_TROPHIES);
 
       // w00t! Log some success :)
@@ -126,6 +133,7 @@ export class DatabaseManager {
   private static mazes: Collection;
   private static scores: Collection;
   private static teams: Collection;
+  private static botcode: Collection;
   private static trophies: Collection;
 
   // get logger instance
@@ -408,6 +416,8 @@ export class DatabaseManager {
         return DatabaseManager.scores;
       case 'teams':
         return DatabaseManager.teams;
+      case 'bot_code':
+        return DatabaseManager.botcode;
       case 'trophies':
         return DatabaseManager.trophies;
       default:
