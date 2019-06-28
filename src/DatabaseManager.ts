@@ -133,6 +133,7 @@ export class DatabaseManager {
   private static mazes: Collection;
   private static scores: Collection;
   private static teams: Collection;
+  private static users: Collection;
   private static botcode: Collection;
   private static trophies: Collection;
 
@@ -420,6 +421,8 @@ export class DatabaseManager {
         return DatabaseManager.botcode;
       case 'trophies':
         return DatabaseManager.trophies;
+      case 'users':
+        return DatabaseManager.users;
       default:
         throw new Error(`Invalid collection name: ${collectionName}`);
     }

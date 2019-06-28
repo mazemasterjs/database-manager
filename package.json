@@ -1,6 +1,6 @@
 {
   "name": "@mazemasterjs/database-manager",
-  "version": "1.5.0",
+  "version": "1.6.0",
   "description": "Wrapper for the MongoDB driver for node that provides CRUD operations (and a few extended operations).  Primarily used by MazeMasterJS services. ",
   "main": "DatabaseManager.ts",
   "directories": {
@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@mazemasterjs/logger": "^1.0.10",
-    "@mazemasterjs/shared-library": "^1.8.12",
+    "@mazemasterjs/shared-library": "^1.12.0",
     "mongodb": "^3.2.7"
   },
   "devDependencies": {
@@ -17,14 +17,14 @@
     "@types/dotenv": "^6.1.1",
     "@types/mocha": "^5.2.7",
     "@types/mongodb": "^3.1.28",
-    "@types/node": "^12.0.8",
+    "@types/node": "^12.0.10",
     "chai": "^4.2.0",
     "dotenv": "^8.0.0",
     "mocha": "^6.1.4",
     "nyc": "^14.1.1",
     "source-map-support": "^0.5.12",
     "ts-node": "^8.3.0",
-    "tslint": "^5.17.0",
+    "tslint": "^5.18.0",
     "tslint-config-prettier": "^1.18.0",
     "typescript": "^3.5.2"
   },

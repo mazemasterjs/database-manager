@@ -68,9 +68,9 @@ describe('DatabaseManager Tests', () => {
     });
   });
 
-  it(`Teams collection count should be 0.`, () => {
+  it(`Teams collection count should be >0.`, () => {
     return mongo.getDocumentCount(MONGO_COL_TEAMS).then(result => {
-      expect(result).to.equal(3);
+      expect(result).to.be.greaterThan(0);
     });
   });
 
@@ -260,19 +260,19 @@ describe('DatabaseManager Tests', () => {
   /* BOTCODE TESTS */
 
   it(`insertDocument(...) - bot "${botCodeId}" should have a new code version inserted`, () => {
-    const newBotCode = { botId: botCodeId, version: 1, code: botCodeVer1, lastUpdated: Date.now() };
+    const newBotCode = { botId: botCodeId, version: '0.0.1', code: botCodeVer1, lastUpdated: Date.now() };
     return mongo.insertDocument(MONGO_COL_BOTCODE, newBotCode).then(result => {
       expect(result.insertedCount).to.equal(1);
     });
   });
 
-  it(`getDocuments(...) - bot "${botCodeId}" should have bot code versions`, () => {
+  it(`getDocuments(...) - bot "${botCodeId}" should have a bot code versions`, () => {
     return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
-      expect(pageOne[0].version).to.equal(1);
+      expect(pageOne[0].version).to.equal('0.0.1');
     });
   });
 
-  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1`, () => {
+  it(`getDocuments(...) - bot "${botCodeId}" code version 0.0.1 should match expected value in botCodeVer1`, () => {
     return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
       const codeDoc = pageOne[0];
       expect(codeDoc.code).to.equal(botCodeVer1);
@@ -281,21 +281,21 @@ describe('DatabaseManager Tests', () => {
 
   it(`updateDocument(...) - bot "${botCodeId}" code version should not change on update`, async () => {
     let codeDoc = await mongo
-      .getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }, { version: 1 }, {}, 10, 1)
+      .getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId, version: '0.0.1' }, { version: 1 }, {}, 10, 1)
       .then(pageOne => {
         return pageOne[0];
       });
 
     codeDoc.code = botCodeVer1a;
-    codeDoc = await mongo.updateDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }, codeDoc);
+    codeDoc = await mongo.updateDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: '0.0.1' }, codeDoc);
 
     return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
       const newDoc = pageOne[0];
-      return expect(newDoc.version).to.equal(1);
+      return expect(newDoc.version).to.equal('0.0.1');
     });
   });
 
-  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1a`, () => {
+  it(`getDocuments(...) - bot "${botCodeId}" code version 0.0.1 should match expected value in botCodeVer1a`, () => {
     return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: 1 }, {}, 10, 1).then(pageOne => {
       const codeDoc = pageOne[0];
       expect(codeDoc.code).to.equal(botCodeVer1a);
@@ -303,7 +303,7 @@ describe('DatabaseManager Tests', () => {
   });
 
   it(`insertDocument(...) - bot "${botCodeId}" should have a new code version inserted`, () => {
-    const newBotCode = { botId: botCodeId, version: 2, code: botCodeVer2, lastUpdated: Date.now() };
+    const newBotCode = { botId: botCodeId, version: '0.0.2', code: botCodeVer2, lastUpdated: Date.now() };
     return mongo.insertDocument(MONGO_COL_BOTCODE, newBotCode).then(result => {
       expect(result.insertedCount).to.equal(1);
     });
@@ -311,11 +311,11 @@ describe('DatabaseManager Tests', () => {
   it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1a`, () => {
     return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: -1 }, {}, 10, 1).then(pageOne => {
       const codeDoc = pageOne[0];
-      expect(codeDoc.version).to.equal(2);
+      expect(codeDoc.version).to.equal('0.0.2');
     });
   });
 
-  it(`getDocuments(...) - bot "${botCodeId}" code version 1 should match expected value in botCodeVer1a`, () => {
+  it(`getDocuments(...) - bot "${botCodeId}" first version should be 0.0.1 should match `, () => {
     return mongo.getDocuments(MONGO_COL_BOTCODE, { botId: botCodeId }, { version: -1 }, {}, 10, 1).then(pageOne => {
       const codeDoc = pageOne[0];
       expect(codeDoc.code).to.equal(botCodeVer2);
@@ -329,13 +329,13 @@ describe('DatabaseManager Tests', () => {
   });
 
   it(`deleteDocument(...) bot code doc v1 should be deleted`, () => {
-    return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 1 }).then(result => {
+    return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: '0.0.1' }).then(result => {
       expect(result.deletedCount).to.equal(1);
     });
   });
 
   it(`deleteDocument(...) bot code doc v2 should be deleted`, () => {
-    return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: 2 }).then(result => {
+    return mongo.deleteDocument(MONGO_COL_BOTCODE, { botId: botCodeId, version: '0.0.2' }).then(result => {
       expect(result.deletedCount).to.equal(1);
     });
   });

@@ -39,6 +39,10 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ### v1.5.0
 
+- Added support for a users collection to be used for authentication / authorization
+
+### v1.5.0
+
 - Added support for a bot_code collection to be used by service-base/team to store, version, and retrieve bot code scripts
 
 ### v1.4.1
