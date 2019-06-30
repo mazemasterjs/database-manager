@@ -37,7 +37,11 @@ Wrapper for the MongoDB driver for node that provides CRUD operations (and a few
 
 ## Change Log
 
-### v1.5.0
+### v1.6.1
+
+- Additional updates and tests to support new users collection
+
+### v1.6.0
 
 - Added support for a users collection to be used for authentication / authorization
 
