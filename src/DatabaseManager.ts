@@ -30,6 +30,7 @@ export class DatabaseManager {
       const MONGO_DB = process.env.MONGO_DB + '';
       const MONGO_COL_MAZES = process.env.MONGO_COL_MAZES + '';
       const MONGO_COL_TEAMS = process.env.MONGO_COL_TEAMS + '';
+      const MONGO_COL_USERS = process.env.MONGO_COL_USERS + '';
       const MONGO_COL_BOTCODE = process.env.MONGO_COL_BOTCODE + '';
       const MONGO_COL_SCORES = process.env.MONGO_COL_SCORES + '';
       const MONGO_COL_TROPHIES = process.env.MONGO_COL_TROPHIES + '';
@@ -55,6 +56,11 @@ export class DatabaseManager {
       /* istanbul ignore if */
       if (MONGO_COL_TEAMS === '') {
         errs += 'MONGO_COL_TEAMS ';
+      }
+
+      /* istanbul ignore if */
+      if (MONGO_COL_USERS === '') {
+        errs += 'MONGO_COL_USERS ';
       }
 
       /* istanbul ignore if */
@@ -104,6 +110,7 @@ export class DatabaseManager {
       DatabaseManager.mazes = db.collection(MONGO_COL_MAZES);
       DatabaseManager.scores = db.collection(MONGO_COL_SCORES);
       DatabaseManager.teams = db.collection(MONGO_COL_TEAMS);
+      DatabaseManager.users = db.collection(MONGO_COL_USERS);
       DatabaseManager.botcode = db.collection(MONGO_COL_BOTCODE);
       DatabaseManager.trophies = db.collection(MONGO_COL_TROPHIES);
 
@@ -417,12 +424,12 @@ export class DatabaseManager {
         return DatabaseManager.scores;
       case 'teams':
         return DatabaseManager.teams;
+      case 'users':
+        return DatabaseManager.users;
       case 'bot_code':
         return DatabaseManager.botcode;
       case 'trophies':
         return DatabaseManager.trophies;
-      case 'users':
-        return DatabaseManager.users;
       default:
         throw new Error(`Invalid collection name: ${collectionName}`);
     }
