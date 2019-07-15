@@ -362,7 +362,7 @@ describe('DatabaseManager Tests', () => {
   });
 
   // ** USER TESTS **//
-  it(`User document should be inserted`, () => {
+  it(`User document ${user.UserName} should be inserted`, () => {
     return mongo.insertDocument(MONGO_COL_USERS, user).then(result => {
       expect(result.insertedCount).to.equal(1);
     });
@@ -389,7 +389,7 @@ describe('DatabaseManager Tests', () => {
     return expect(userFromJson.validatePwHash('wrong-hash')).to.be.false;
   });
 
-  it(`User document should be deleted`, () => {
+  it(`User document ${user.UserName}, ${user.Id}  should be deleted`, () => {
     return mongo.deleteDocument(MONGO_COL_USERS, { id: user.Id }).then(result => {
       expect(result.deletedCount).to.equal(1);
     });
