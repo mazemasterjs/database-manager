@@ -3,4 +3,4 @@
 --watch-extensions ts
 --recursive
 --timeout 5000
-test/DatabaseManager.test.ts
+test/MazeFixer.test.ts
