@@ -42,25 +42,25 @@ describe('DatabaseManager Tests', () => {
 
   // get all scores
   it(`getDOcument(MONGO_COL_SCORES) should be > 2000`, async () => {
-    // let pageNum = 1;
-    return await mongo.getDocuments(MONGO_COL_SCORES, {}, { lastUpdated: -1 }, {}, 5000, 0).then(scores => {
-      scores.forEach(score => {
-        if (score.teamId === 'JD_A_TEAM_01') {
+    // const query = { mazeId: '15:15:4:HorHik_v1.0.0' };
+    const query = {
+      mazeId: '15:15:4:HorHik_v1.0.0',
+      gameMode: 2,
+    };
+
+    // const query = {
+    //   mazeId: { $in: ['5:10:3:WinWal_v1.0.0'] },
+    //   teamId: { $in: ['3e0fdb5d847ac122f71b60746400e029', '2806225f5e90162e58a05c3427c1db77'] },
+    // };
+
+    return await mongo
+      .getDocuments(MONGO_COL_SCORES, query, { totalScore: -1, lastUpdated: -1 }, {}, 15, 0)
+      .then(scores => {
+        scores.forEach(score => {
           console.log('Score: ', score);
-          // mongo.updateDocument(MONGO_COL_SCORES, { id: score.id }, score);
-          mongo.deleteDocument(MONGO_COL_SCORES, { id: score.id });
-        }
+        });
+
+        return expect(true).to.be.true;
       });
-
-      // scores.sort((s1, s2) => {
-      //   return s2.totalScore - s1.totalScore;
-      // });
-
-      // scores.forEach(score => {
-      //   console.log(score.id, 'Total: ' + score.totalScore);
-      // });
-
-      return expect(true).to.be.true;
-    });
   });
 });
